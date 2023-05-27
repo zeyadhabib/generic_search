@@ -2,14 +2,12 @@ use std::ops::Deref;
 use std::process::exit;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::{thread::available_parallelism, num::NonZeroUsize, collections::VecDeque};
+//use std::thread;
+use std::{thread::available_parallelism, num::NonZeroUsize};
 
 use colored::*;
 use clap::Parser;
 use threadpool::ThreadPool;
-
-type SafeQueuePtr = Arc<Mutex<VecDeque<PathBuf>>>;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Find your zombie!", long_about = None)]
@@ -35,7 +33,7 @@ pub struct Args {
     only_dirs: bool,
 }
 
-fn process_file_name(path: &PathBuf, query: &Box<String>, args: &Arc<Args>) {
+fn process_file_name(path: &PathBuf, query: &Arc<String>, args: &Arc<Args>) {
     let is_match = match args.ignore_case {
         true => path.file_name().unwrap().to_ascii_lowercase().to_str().unwrap().contains(query.to_ascii_lowercase().deref()),
         false => path.file_name().unwrap().to_str().unwrap().contains(query.deref()),
@@ -61,61 +59,30 @@ fn process_file_name(path: &PathBuf, query: &Box<String>, args: &Arc<Args>) {
     }
 }
 
-pub fn run(root_dir: &String, query: &String, args: Arc<Args>) {
-    let val = Arc::new(AtomicUsize::new(0));
-    let path = PathBuf::from(root_dir);
-    let query = Box::new(query.clone());
-    if !path.is_dir() {
-        panic!("{} is not a directory", path.display());
-    }
-    let num_threads = available_parallelism()
-                                    .unwrap_or(NonZeroUsize::new(4).unwrap())
-                                    .get();
-    println!("{} {} {}", "Using".cyan().bold(), num_threads.to_string().cyan().bold(), "threads".cyan().bold());
-    let worker_pool = ThreadPool::new(num_threads);
-
-    let dir_queue = VecDeque::from(vec![path]);
-    let dir_queue = Arc::new(Mutex::new(dir_queue));
-    loop {
-        let safeq = dir_queue.lock().unwrap();
-        if !safeq.is_empty() {
-            let val = Arc::clone(&val);
-            let dir_queue_clone = dir_queue.clone();
-            let thread_query = query.clone();
-            let thread_args = args.clone();
-            worker_pool.execute(move || {
-                val.fetch_add(1, Ordering::SeqCst);
-                search_single_dir(dir_queue_clone, thread_query, thread_args);
-                val.fetch_sub(1, Ordering::SeqCst);
-            });
-        } else if val.load(Ordering::SeqCst) == 0 {            
-            break;
-        }
-    }
-}
-
-fn search_single_dir(dir_queue: SafeQueuePtr, query: Box<String>, args: Arc<Args>) {
-    let system_path: Option<PathBuf>;
-    {
-        let mut safeq = dir_queue.lock().unwrap();
-        system_path = safeq.pop_front();
-    }
-    let system_path = match system_path {
-        Some(path) => path,
-        None => return,
-    };
+fn multi_threaded_dfs (root_dir: Arc<String>, query: Arc<String>, worker_pool: Arc<Mutex<ThreadPool>>, args: Arc<Args>) {
+    let system_path = PathBuf::from(root_dir.deref());
     let entries = match system_path.read_dir() {
         Ok(entries) => entries,
-        Err(_) => return,
+        Err(err) => {
+            println!("{} {} err: {}", "Error reading directory:".red(), system_path.to_str().unwrap().red(), err.to_string().red());
+            return;
+        },
     };
     for entry in  entries {
         let entry = entry.unwrap();
         let path = entry.path();
+        //println!("Thread: {:?}", thread::current().id());
         process_file_name(&path, &query, &args);
         if path.is_dir() {
             {
-                let mut safeq = dir_queue.lock().unwrap();
-                safeq.push_back(path);
+                let pool_handle = worker_pool.lock().unwrap();
+                let pool_clone = worker_pool.clone();
+                let path_clone = Arc::new(path.to_str().unwrap().to_string());
+                let query_clone = query.clone();
+                let args_clone = args.clone();
+                pool_handle.execute(move || {
+                    multi_threaded_dfs(path_clone, query_clone, pool_clone, args_clone);
+                });
             }
         }
     }
@@ -131,5 +98,12 @@ fn main() {
         println!("{}", "You can't use both --only-files and --only-dirs".red());
         exit(1);
     }
-    run(&root_dir, &query, Arc::new(args));
+
+    let num_threads = available_parallelism()
+                                    .unwrap_or(NonZeroUsize::new(4).unwrap())
+                                    .get();
+    println!("{} {} {}", "Using".cyan().bold(), num_threads.to_string().cyan().bold(), "threads".cyan().bold());
+    let worker_pool = ThreadPool::new(num_threads);
+
+    multi_threaded_dfs(Arc::new(root_dir), Arc::new(query), Arc::new(Mutex::new(worker_pool)), Arc::new(args));
 }

@@ -1,7 +1,9 @@
 use std::ops::Deref;
 use std::process::exit;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::mpsc::Sender;
+use std::sync::{Arc, Mutex, mpsc};
 //use std::thread;
 use std::{thread::available_parallelism, num::NonZeroUsize};
 
@@ -59,7 +61,7 @@ fn process_file_name(path: &PathBuf, query: &Arc<String>, args: &Arc<Args>) {
     }
 }
 
-fn multi_threaded_dfs (root_dir: Arc<String>, query: Arc<String>, worker_pool: Arc<Mutex<ThreadPool>>, args: Arc<Args>) {
+fn multi_threaded_dfs (root_dir: Arc<String>, query: Arc<String>, worker_pool: Arc<Mutex<ThreadPool>>, args: Arc<Args>, tx: Sender<()>) {
     let system_path = PathBuf::from(root_dir.deref());
     let entries = match system_path.read_dir() {
         Ok(entries) => entries,
@@ -70,18 +72,19 @@ fn multi_threaded_dfs (root_dir: Arc<String>, query: Arc<String>, worker_pool: A
     };
     for entry in  entries {
         let entry = entry.unwrap();
-        let path = entry.path();
+        let child_path = entry.path();
         //println!("Thread: {:?}", thread::current().id());
-        process_file_name(&path, &query, &args);
-        if path.is_dir() {
+        process_file_name(&child_path, &query, &args);
+        if child_path.is_dir() {
+            let pool_clone = worker_pool.clone();
+            let path_clone = Arc::new(child_path.to_str().unwrap().to_string());
+            let query_clone = query.clone();
+            let args_clone = args.clone();
+            let tx_clone = tx.clone();
             {
                 let pool_handle = worker_pool.lock().unwrap();
-                let pool_clone = worker_pool.clone();
-                let path_clone = Arc::new(path.to_str().unwrap().to_string());
-                let query_clone = query.clone();
-                let args_clone = args.clone();
                 pool_handle.execute(move || {
-                    multi_threaded_dfs(path_clone, query_clone, pool_clone, args_clone);
+                    multi_threaded_dfs(path_clone, query_clone, pool_clone, args_clone, tx_clone);
                 });
             }
         }
@@ -103,7 +106,8 @@ fn main() {
                                     .unwrap_or(NonZeroUsize::new(4).unwrap())
                                     .get();
     println!("{} {} {}", "Using".cyan().bold(), num_threads.to_string().cyan().bold(), "threads".cyan().bold());
-    let worker_pool = ThreadPool::new(num_threads);
-
-    multi_threaded_dfs(Arc::new(root_dir), Arc::new(query), Arc::new(Mutex::new(worker_pool)), Arc::new(args));
+    let worker_pool = Arc::new(Mutex::new(ThreadPool::new(num_threads)));
+    let (tx, rx) = mpsc::channel();
+    multi_threaded_dfs(Arc::new(root_dir), Arc::new(query), worker_pool.clone(), Arc::new(args), tx);
+    rx.recv().unwrap();
 }

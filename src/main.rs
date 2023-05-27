@@ -122,6 +122,7 @@ fn search_single_dir(dir_queue: SafeQueuePtr, query: Box<String>, args: Arc<Args
 }
 
 fn main() {
+    // TODO: Add comments
     let args = Args::parse();
     let root_dir = args.dir.clone();
     let query = args.query.clone();

@@ -1,7 +1,6 @@
 use std::ops::Deref;
 use std::process::exit;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, mpsc};
 //use std::thread;
@@ -109,5 +108,5 @@ fn main() {
     let worker_pool = Arc::new(Mutex::new(ThreadPool::new(num_threads)));
     let (tx, rx) = mpsc::channel();
     multi_threaded_dfs(Arc::new(root_dir), Arc::new(query), worker_pool.clone(), Arc::new(args), tx);
-    rx.recv().unwrap();
+    let _ = rx.recv();
 }

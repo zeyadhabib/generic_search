@@ -3,7 +3,6 @@ use std::process::exit;
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, mpsc};
-//use std::thread;
 use std::{thread::available_parallelism, num::NonZeroUsize};
 
 use colored::*;
@@ -32,14 +31,21 @@ pub struct Args {
     /// Only print directories, do not use with only_files!.
     #[arg(long, default_value = "false")]
     only_dirs: bool,
+
+    /// Ignore read file/dir errors.
+    #[arg(long, short, default_value = "false")]
+    ignore_errors: bool,
 }
 
 fn process_file_name(path: &PathBuf, query: &Arc<String>, args: &Arc<Args>) {
+    // First off let's check if the file/dir name matches the query
     let is_match = match args.ignore_case {
         true => path.file_name().unwrap().to_ascii_lowercase().to_str().unwrap().contains(query.to_ascii_lowercase().deref()),
         false => path.file_name().unwrap().to_str().unwrap().contains(query.deref()),
     };
-        
+    
+    // If it does, let's make sure that it's not a symlink.
+    // We ignore symlinks to prevent cycles in the file system graph.
     if (path.is_file() || path.is_dir()) && is_match {
         let string = path.to_str().unwrap().to_string().green();
         let is_dir = path.is_dir();
@@ -65,22 +71,29 @@ fn multi_threaded_dfs (root_dir: Arc<String>, query: Arc<String>, worker_pool: A
     let entries = match system_path.read_dir() {
         Ok(entries) => entries,
         Err(err) => {
-            println!("{} {} err: {}", "Error reading directory:".red(), system_path.to_str().unwrap().red(), err.to_string().red());
+            if !args.ignore_errors {
+                // Print the error and return, (most likely a permission error)
+                println!("{} {} {} {}", "Error reading directory:".red(),
+                            system_path.to_str().unwrap().red(), "err".red(), err.to_string().red())
+            }
             return;
         },
     };
+
     for entry in  entries {
         let entry = entry.unwrap();
         let child_path = entry.path();
-        //println!("Thread: {:?}", thread::current().id());
         process_file_name(&child_path, &query, &args);
+        // If the child is a directory, let's spawn a new thread to search it.
         if child_path.is_dir() {
+            // Clone the thread params to move into the new thread.
             let pool_clone = worker_pool.clone();
             let path_clone = Arc::new(child_path.to_str().unwrap().to_string());
             let query_clone = query.clone();
             let args_clone = args.clone();
             let tx_clone = tx.clone();
             {
+                // Open a new scope to drop the lock on the worker pool.
                 let pool_handle = worker_pool.lock().unwrap();
                 pool_handle.execute(move || {
                     multi_threaded_dfs(path_clone, query_clone, pool_clone, args_clone, tx_clone);

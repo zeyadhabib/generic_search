@@ -8,7 +8,7 @@ type TxSender = mpsc::Sender<DataSender>;
 pub async fn process (path: PathBuf, query: Arc<String>, tx: mpsc::Sender<PathBuf>, sender_tx: TxSender) {
     let mut handles = Vec::new();
 
-    if path.to_str().unwrap().contains(query.as_str()) {
+    if path.to_str().unwrap().to_lowercase().contains(query.to_lowercase().as_str()) {
         if path.is_file() {
             println!("{} {}", "[FIL] ".green(), path.to_str().unwrap().to_string().green());
         } else if path.is_dir() {

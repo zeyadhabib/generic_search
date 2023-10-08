@@ -41,31 +41,39 @@ impl SimpleOrchestrator {
                 Some(_)=>{
 
                     // Recieve the directory content and pulse transmitter from the channel.
-                    let (dir_content, pulse_transmitter) = dir_content_reciever.recv().await.unwrap();
+                    let (dir_content_vec, pulse_transmitter) = dir_content_reciever.recv().await.unwrap();
                     // Declare the clone of the directory content for the consumer thread.
-                    let dir_content_clone: DirContent;
+                    let query = self.query.clone();
+                    let dir_content_transmitter_internal = dir_content_transmitter.clone();
 
-                    match dir_content {
-                        // If the directory content is a directory, spawn a producer to read the contents of the directory.
-                        DirContent::Dir(dir) => {
-                            dir_content_clone = DirContent::Dir(dir.clone());
-                            let dir_content_transmitter_clone = dir_content_transmitter.clone();
-                            tokio::spawn(async move {
-                                SimpleProducer::produce(DirContent::Dir(dir), pulse_transmitter, dir_content_transmitter_clone).await;
-                            });
-                        },
-                        DirContent::File(file) => {
-                            dir_content_clone = DirContent::File(file.clone());
-                        } 
-                    }
-                    
-                    let query_clone = self.query.clone();
-
-                    // Spawn the consumer thread.
                     tokio::spawn(async move {
-                        LocalConsumer::consume(dir_content_clone, query_clone).await;
-                    });
+                        
+                        let mut consumed_dir_content_vec: Vec<DirContent> = Vec::new();
+                        for dir_content in dir_content_vec {
+                            let dir_content_clone: DirContent;
+                            match dir_content {
+                                DirContent::Dir(dir) => {
+                                    dir_content_clone = DirContent::Dir(dir.clone());
+                                    let pulse_transmitter_clone = pulse_transmitter.clone();
+                                    let dir_content_transmitter_clone = dir_content_transmitter_internal.clone();
+    
+                                    tokio::spawn(async move {
+                                        SimpleProducer::produce(DirContent::Dir(dir), pulse_transmitter_clone, dir_content_transmitter_clone).await;
+                                    });
+                                },
+                                DirContent::File(file) => {
+                                    dir_content_clone = DirContent::File(file.clone());
+                                }
+                            }
+                            consumed_dir_content_vec.push(dir_content_clone);
+                        }
 
+                        let query_clone = query.clone();
+                        // Spawn the consumer thread.
+                        tokio::spawn(async move {
+                            LocalConsumer::consume(consumed_dir_content_vec, query_clone).await;
+                        });
+                    });
                 },
                 // Channel is closed, stop the program.
                 None=>{

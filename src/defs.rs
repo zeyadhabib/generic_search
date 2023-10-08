@@ -17,7 +17,7 @@ pub static PULSE: () = ();
 pub type PulseSender = mpsc::Sender<Pulse>;
 
 // Defines the message to be sent over the channel.
-type DirContentChannelMessage = (DirContent, PulseSender);
+type DirContentChannelMessage = (Vec<DirContent>, PulseSender);
 
 // Defines the sender for a directory entry.
 pub type DirContentSender = mpsc::Sender<DirContentChannelMessage>;

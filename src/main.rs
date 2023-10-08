@@ -21,9 +21,14 @@ pub struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    let root_dir = std::path::PathBuf::from(args.dir);
+
+    if !root_dir.is_dir() {
+        println!("This is not a directory!\nEntered Directory: {}", root_dir.to_str().unwrap());
+    }
 
     // Create the orchestrator.
-    let orchestrator = SimpleOrchestrator::new(args.query, std::path::PathBuf::from(args.dir));
+    let orchestrator = SimpleOrchestrator::new(args.query, root_dir);
 
     // Run the orchestrator.
     orchestrator.run().await;

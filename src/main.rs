@@ -8,11 +8,11 @@ use std::sync::Arc;
 #[command(author, version, about = "Find your zombie!", long_about = None)]
 pub struct Args {
     /// The directory to search in.
-    #[arg(index = 1, short, long)]
+    #[arg(short = 'd', long = "dir", required = true)]
     dir: String,
 
     /// The query (file/dir name) to search for.
-    #[arg(index = 2, short, long)]
+    #[arg(short = 'q', long = "query", required = true)]
     query: String
 }
 

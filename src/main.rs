@@ -21,7 +21,11 @@ pub struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+
+    // Create the orchestrator.
     let orchestrator = SimpleOrchestrator::new(args.query, std::path::PathBuf::from(args.dir));
+
+    // Run the orchestrator.
     orchestrator.run().await;
     Ok(())
 }

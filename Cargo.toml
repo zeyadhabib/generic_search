@@ -7,7 +7,7 @@ edition = "2021"
 
 [[bin]]
 edition = "2018"
-name = "zombie_chase"
+name = "zombie_hunt"
 path = "src/main.rs"
 
 [dependencies]

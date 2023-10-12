@@ -5,13 +5,26 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "generic_search"
+path = "generic_search/src/lib.rs"
+
 [[bin]]
-edition = "2018"
 name = "zombie_hunt"
-path = "src/main.rs"
+path = "zombie_hunt/src/main.rs"
+
+[[bin]]
+name = "zombie_hunt_server"
+path = "zombie_hunt_server/src/main.rs"
 
 [dependencies]
+colored = "2"
+prost = "0.12"
+futures-core = "0.3"
+tonic = { version = "0.10", features = ["tls"] }
+tokio = { version = "1.32", features = ["full"] }
 clap = { version = "4.3.0", features = ["derive"] }
-colored="2"
-tokio = { version = "1", features = ["full"] }
-futures = "0.3.28"
+tokio-stream = { version = "0.1", features = ["full"] }
+
+[build-dependencies]
+tonic-build = "0.10"

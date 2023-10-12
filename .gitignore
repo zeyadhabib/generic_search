@@ -1,1 +1,7 @@
 /target
+*key*
+*.pem
+*.pub
+*.csr
+*.crt
+*.srl

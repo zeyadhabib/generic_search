@@ -1,0 +1,16 @@
+syntax = "proto3";
+package search;
+
+message SearchRequest {
+  string query = 1;
+  string root_directory = 2;
+}
+
+message SearchResponse {
+  bool is_directory = 1;
+  string match = 2; 
+}
+
+service SearchService {
+  rpc Search(SearchRequest) returns (stream SearchResponse);
+}

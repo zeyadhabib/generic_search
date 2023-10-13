@@ -1,6 +1,7 @@
-use colored::*;
 use generic_search::search::SearchRequest;
 use generic_search::search::search_service_client::SearchServiceClient;
+use generic_search::common::{ print_remote_file_match, print_remote_directory_match };
+
 use tonic::transport::{ Identity, ClientTlsConfig, Certificate, Channel };
 
 
@@ -36,10 +37,10 @@ pub async fn run(server_domain_name: &str, server_address: &str, server_port: u1
     while let Some(specs_response) = specs_response_stream.message().await? {
         if specs_response.is_directory {
             // Print the file name in green.
-            println!("{} {}", "[REMOTE][FIL] ".green(), specs_response.r#match.green());
+            print_remote_directory_match(specs_response.r#match.as_str());
         } else {
             // Print the directory name in green and blink.
-            println!("{} {}", "[REMOTE][DIR] ".green().blink(), specs_response.r#match.green().green().blink());
+            print_remote_file_match(specs_response.r#match.as_str());
         }
     }
 

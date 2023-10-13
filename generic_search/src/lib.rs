@@ -3,6 +3,7 @@ pub mod search {
 }
 
 pub mod defs;
+pub mod common;
 pub mod producer;
 pub mod local_consumer;
 pub mod remote_consumer;

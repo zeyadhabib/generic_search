@@ -1,9 +1,8 @@
 mod zombie_hunt_client;
 
-use colored::*;
 use clap::Parser;
 use zombie_hunt_client::run;
-use generic_search::local_orchestrator::SimpleOrchestrator;
+use generic_search::{local_orchestrator::SimpleOrchestrator, common::print_error_message};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Find your zombie!", long_about = None)]
@@ -31,13 +30,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root_dir = std::path::PathBuf::from(args.dir.clone());
 
     if !args.remote && args.remote_only {
-        println!("{}", "You just wasted precious CPU cycles!".red().bold());
-        println!("{}", "Please select at least one search method (remote/local)... Simpleton.".red().bold());
+        print_error_message("You just wasted precious CPU cycles!");
+        print_error_message("Please select at least one search method (remote/local)... Simpleton!");
         return Ok(());
     }
 
     if !root_dir.is_dir() {
-        println!("{} {}", "This is not a directory!\nEntered Directory:".red().bold(), root_dir.to_str().unwrap().red().bold());
+        print_error_message(format!("This is not a directory!\nEntered Directory: {}", args.dir.as_str()).as_str());
     }
 
     if !args.remote_only {

@@ -1,5 +1,5 @@
-use colored::*;
 use crate::defs::DirContent;
+use crate::common::{ print_local_file_match, print_local_directory_match };
 
 pub struct LocalConsumer {}
 
@@ -18,10 +18,10 @@ impl LocalConsumer {
             if path.to_str().unwrap().to_lowercase().contains(query.to_lowercase().as_str()) {
                 if path.is_file() {
                     // Print the file name in green.
-                    println!("{} {}", "[FIL] ".green(), path.to_str().unwrap().to_string().green());
+                    print_local_file_match(path.to_str().unwrap());
                 } else if path.is_dir() {
                     // Print the directory name in green and blink.
-                    println!("{} {}", "[DIR] ".green().blink(), path.to_str().unwrap().to_string().green().blink());
+                    print_local_directory_match(path.to_str().unwrap());
                 }
             }
         }

@@ -1,0 +1,10 @@
+server_info:
+  address: "https://[::1]"
+  domain: "zeyad.server.com"
+  port: 50051
+
+certs_info:
+  certs_dir: "C:\\Users\\zeyadhabib\\source\\repos\\generic_search"
+  leaf_cert: "certs\\client-leaf\\client-leaf.pem"
+  leaf_key: "certs\\client-leaf\\client-leaf.key"
+  ca_cert: "certs\\chain.pem"

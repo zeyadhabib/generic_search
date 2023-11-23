@@ -21,6 +21,8 @@ path = "zombie_hunt_server/src/main.rs"
 colored = "2"
 prost = "0.12"
 futures-core = "0.3"
+serde_yaml = "0.9"
+serde = { version = "1.0", features = ["derive"] }
 tonic = { version = "0.10", features = ["tls"] }
 tokio = { version = "1.32", features = ["full"] }
 clap = { version = "4.3.0", features = ["derive"] }

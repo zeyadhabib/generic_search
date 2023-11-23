@@ -1,23 +1,20 @@
+use crate::helpers::ClientConfig;
 use generic_search::search::SearchRequest;
 use generic_search::search::search_service_client::SearchServiceClient;
 use generic_search::common::{ print_remote_file_match, print_remote_directory_match };
 
-use tonic::transport::{ Identity, ClientTlsConfig, Certificate, Channel };
+use tonic::transport::{ ClientTlsConfig, Channel };
 
 
-pub async fn run(server_domain_name: &str, server_address: &str, server_port: u16, root_directory: String, query: String) -> Result<(), Box<dyn std::error::Error>> {
-    let server_root_ca_cert = std::fs::read_to_string(r".\certs\chain.pem")?;
-    let server_root_ca_cert = Certificate::from_pem(server_root_ca_cert);
-    let client_cert = std::fs::read_to_string(r".\certs\client-leaf\client-leaf.pem")?;
-    let client_key = std::fs::read_to_string(r".\certs\client-leaf\client-leaf.key")?;
-    let client_identity = Identity::from_pem(client_cert, client_key);
+pub async fn run(client_config: ClientConfig, root_directory: String, query: String) -> Result<(), Box<dyn std::error::Error>> {
+    let (client_identity, server_root_ca_cert) = client_config.certs_info.get();
 
     let tls = ClientTlsConfig::new()
-        .domain_name(server_domain_name)
+        .domain_name(client_config.server_info.domain.as_str())
         .ca_certificate(server_root_ca_cert)
         .identity(client_identity);
 
-    let server_address = format!("{}:{}", server_address, server_port);
+    let server_address = format!("{}:{}", client_config.server_info.address, client_config.server_info.port);
     println!("Connecting to {}", server_address);
 
     let channel = Channel::from_shared(server_address)

@@ -1,6 +1,8 @@
+mod helpers;
 mod zombie_hunt_client;
 
 use clap::Parser;
+use helpers::ClientConfig;
 use zombie_hunt_client::run;
 use generic_search::{local_orchestrator::SimpleOrchestrator, common::print_error_message};
 
@@ -47,8 +49,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if args.remote {
+        let config = ClientConfig::new(
+            String::from(r".\zombie_hunt\config\client_config.yaml"));
+
         // Run the client.
-        run("zeyad.server.com", "https://[::1]", 50051, args.dir, args.query).await?;
+        run(config, args.dir, args.query).await?;
     }
 
     Ok(())

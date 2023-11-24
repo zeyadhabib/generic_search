@@ -1,0 +1,9 @@
+server_info:
+  address: "[::1]"
+  port: 50051
+
+certs_info:
+  certs_dir: "C:\\Users\\zeyadhabib\\source\\repos\\generic_search"
+  leaf_cert: "certs\\server-leaf\\server-leaf.pem"
+  leaf_key: "certs\\server-leaf\\server-leaf.key"
+  ca_cert: "certs\\chain.pem"

@@ -1,7 +1,9 @@
+mod helpers;
+
 use std::pin::Pin;
 use std::path::PathBuf;
 use tokio_stream::{ Stream, wrappers::ReceiverStream };
-use tonic::{ transport::{ Server, Identity, ServerTlsConfig, Certificate }, Request, Response, Status };
+use tonic::{ transport::{ Server, ServerTlsConfig }, Request, Response, Status };
 
 use generic_search::remote_orchestrator::RemoteOrchestrator;
 use generic_search::search::{ SearchRequest, SearchResponse };
@@ -30,12 +32,13 @@ impl SearchService for ZombieHuntServer {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
-    let key = std::fs::read_to_string(r".\certs\server-leaf\server-leaf.key")?;
-    let cert = std::fs::read_to_string(r".\certs\server-leaf\server-leaf.pem")?;
-    let ca_root = Certificate::from_pem(std::fs::read_to_string(r".\certs\chain.pem")?);
-    let identity = Identity::from_pem(cert, key);
+    let server_config = helpers::ServerConfig::new(
+        String::from(r"C:\Users\zeyadhabib\source\repos\generic_search\zombie_hunt_server\config\server_config.yaml")
+    );
+    let (identity, ca_root) = server_config.certs_info.get();
     let search_service = ZombieHuntServer::default();
+
+    let server_address = format!("{}:{}", server_config.server_info.address, server_config.server_info.port);
 
     let tls = ServerTlsConfig::new()
         .identity(identity)
@@ -44,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Server::builder()
         .tls_config(tls)?
         .add_service(SearchServiceServer::new(search_service))
-        .serve(addr)
+        .serve(server_address.parse()?)
         .await?;
 
     Ok(())

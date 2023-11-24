@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tonic::transport::{ Identity, Certificate };
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ClientConfig {
+pub struct ServerConfig {
     pub server_info: ServerInfo,
     pub certs_info: CertsInfo
 }
@@ -10,7 +10,6 @@ pub struct ClientConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerInfo {
     pub address: String,
-    pub domain: String,
     pub port: u16
 }
 
@@ -42,11 +41,11 @@ impl CertsInfo {
     }
 }
 
-impl ClientConfig {
+impl ServerConfig {
     pub fn new (config_file_path: String) -> Self {
         let config_file = std::fs::File::open(config_file_path)
                                                 .expect("Could not open file.");
-        let config: ClientConfig = serde_yaml::from_reader(config_file)
+        let config: ServerConfig = serde_yaml::from_reader(config_file)
                                                 .expect("Could not read values.");
         println!("{:?}", config);
 
@@ -56,12 +55,12 @@ impl ClientConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::ClientConfig;
+    use super::ServerConfig;
 
     #[test]
     fn test_server_config_new() {
         // Call the new method with the temporary config file
-        let _config = ClientConfig::new(
-            String::from(r"C:\Users\zeyadhabib\source\repos\generic_search\zombie_hunt\config\client_config.yaml"));
+        let _config = ServerConfig::new(
+            String::from(r"C:\Users\zeyadhabib\source\repos\generic_search\zombie_hunt_server\config\server_config.yaml"));
     }
 }

@@ -23,9 +23,9 @@ pub struct CertsInfo {
 
 impl CertsInfo {
     pub fn get(&self) -> (Identity, Certificate) {
-        let cert_path = self.certs_dir.clone() + "\\" + self.leaf_cert.as_str();
-        let key_path = self.certs_dir.clone() + "\\" + self.leaf_key.as_str();
-        let ca_cert_path = self.certs_dir.clone() + "\\" + self.ca_cert.as_str();
+        let cert_path = self.certs_dir.clone() + "/" + self.leaf_cert.as_str();
+        let key_path = self.certs_dir.clone() + "/" + self.leaf_key.as_str();
+        let ca_cert_path = self.certs_dir.clone() + "/" + self.ca_cert.as_str();
 
         let cert = std::fs::read_to_string(cert_path.clone())
             .expect("Could not read cert file.");
@@ -61,6 +61,6 @@ mod tests {
     fn test_server_config_new() {
         // Call the new method with the temporary config file
         let _config = ServerConfig::new(
-            String::from(r"C:\Users\zeyadhabib\source\repos\generic_search\zombie_hunt_server\config\server_config.yaml"));
+            String::from(r"/Users/zeyadhabib/Repos/generic_search/zombie_hunt_server/config/server_config.yaml"));
     }
 }

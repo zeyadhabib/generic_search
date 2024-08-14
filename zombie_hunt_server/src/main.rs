@@ -33,7 +33,7 @@ impl SearchService for ZombieHuntServer {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_config = helpers::ServerConfig::new(
-        String::from(r".\zombie_hunt_server\config\server_config.yaml")
+        String::from(r"/Users/zeyadhabib/Repos/generic_search/zombie_hunt_server/config/server_config.yaml")
     );
     let (identity, ca_root) = server_config.certs_info.get();
     let search_service = ZombieHuntServer::default();

@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if args.remote {
         let config = ClientConfig::new(
-            String::from(r".\zombie_hunt\config\client_config.yaml"));
+            String::from(r"/Users/zeyadhabib/Repos/generic_search/zombie_hunt/config/client_config.yaml"));
 
         // Run the client.
         run(config, args.dir, args.query).await?;

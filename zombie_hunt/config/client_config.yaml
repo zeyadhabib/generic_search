@@ -4,7 +4,7 @@ server_info:
   port: 50051
 
 certs_info:
-  certs_dir: "C:\\Users\\zeyadhabib\\source\\repos\\rust\\generic_search"
-  leaf_cert: "certs\\client-leaf\\client-leaf.pem"
-  leaf_key: "certs\\client-leaf\\client-leaf.key"
-  ca_cert: "certs\\chain.pem"
+  certs_dir: "/Users/zeyadhabib/Repos/generic_search"
+  leaf_cert: "certs/client-leaf/client-leaf.pem"
+  leaf_key: "certs/client-leaf/client-leaf.key"
+  ca_cert: "certs/chain.pem"
